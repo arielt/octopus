@@ -1,9 +1,14 @@
-from google.oauth2.credentials import Credentials
+"""
+This script is used to import events from the user's Google Calendar to the database.
+"""
+
+from datetime import datetime as dt, timezone as tz
+import os.path
+import pickle
+
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
-import os.path
-import pickle
 
 # If modifying these scopes, delete the file token.pickle.
 SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"]
@@ -31,14 +36,13 @@ def get_calendar_service():
         with open("token.pickle", "wb") as token:
             pickle.dump(creds, token)
 
-    service = build("calendar", "v3", credentials=creds)
-    return service
+    return build("calendar", "v3", credentials=creds)
 
 
 def get_calendar_events(service, max_results=10):
     """Get events from the primary calendar."""
     # Call the Calendar API
-    now = datetime.datetime.utcnow().isoformat() + "Z"  # 'Z' indicates UTC time
+    now = dt.now(tz.utc).isoformat().replace("+00:00", "Z")
     events_result = (
         service.events()
         .list(
@@ -62,7 +66,5 @@ def get_calendar_events(service, max_results=10):
 
 
 if __name__ == "__main__":
-    import datetime
-
-    service = get_calendar_service()
-    get_calendar_events(service)
+    calendar_service = get_calendar_service()
+    get_calendar_events(calendar_service)
