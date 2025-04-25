@@ -4,7 +4,7 @@ Driver script to dump app versions for all platforms.
 
 from google_play import scrape_zxbase_version
 from apple_app_store import AppleAppStore
-
+from snapcraft import scrape_snapcraft_version
 
 def main():
     """
@@ -16,8 +16,9 @@ def main():
     print(f"{'iOS':<10} {apple_app.scrape_ios_version()}")
     print(f"{'iPad':<10} {apple_app.scrape_ipad_version()}")
     print(f"{'macOS':<10} {apple_app.scrape_macos_version()}")
+    print(f"{'Linux':<10} {scrape_snapcraft_version()}")
 
-    # TBD: Windows, Linux
+    # TBD: Windows
 
 
 if __name__ == "__main__":
