@@ -7,9 +7,9 @@ import requests
 from bs4 import BeautifulSoup
 
 
-def get_version(url: str):
+def scrape_google_play_version(url: str):
     """
-    Get the latest version of the app from the Google Play URL.
+    Scrape the latest version of the app from the Google Play URL.
     """
     response = requests.get(url, timeout=10)
     soup = BeautifulSoup(response.text, "html.parser")
@@ -21,13 +21,20 @@ def get_version(url: str):
     return None
 
 
+def scrape_zxbase_version():
+    """
+    Scrape the latest version of Zxbase from the Google Play URL.
+    """
+    return scrape_google_play_version(
+        "https://play.google.com/store/apps/details?id=com.zxbase.base"
+    )
+
+
 def main():
     """
     Driver script to get the latest version of the app from the Google Play URL.
     """
-    url = "https://play.google.com/store/apps/details?id=com.zxbase.base"
-    version = get_version(url)
-    print(version)
+    print(f"{'Android':<10} {scrape_zxbase_version()}")
 
 
 if __name__ == "__main__":
