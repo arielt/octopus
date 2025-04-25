@@ -18,8 +18,7 @@ def main():
     print(f"{'iPad':<10} {apple_app.scrape_ipad_version()}")
     print(f"{'macOS':<10} {apple_app.scrape_macos_version()}")
     print(f"{'Linux':<10} {scrape_snapcraft_version()}")
-
-    # TBD: Windows
+    print(f"{'Windows':<10} Unknown")
 
 
 if __name__ == "__main__":
