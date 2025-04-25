@@ -1,3 +1,4 @@
 # credentials to ignore everywhere
 credentials.json
 token.pickle
+__pycache__/
