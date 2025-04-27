@@ -4,6 +4,7 @@ Script to manipulate Gmail filters.
 
 import os.path
 import pickle
+from datetime import datetime
 
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
@@ -38,6 +39,21 @@ def get_gmail_service():
 
     service = build("gmail", "v1", credentials=creds)
     return service
+
+
+def get_filters(service):
+    """Get all filters for the authenticated user."""
+    results = service.users().settings().filters().list(userId="me").execute()
+    filters = results.get("filter", [])
+    return filters
+
+
+def print_filters(filters):
+    """Print labels."""
+    print(f"Filters: {len(filters)} found")
+    print("----------------------------------------------------")
+    df = pd.DataFrame(filters)
+    print(df)
 
 
 def list_filters(service):
@@ -107,6 +123,48 @@ def print_labels(labels):
     print(df)
 
 
+def analyze_labels(service, labels):
+    """Analyze labels."""
+
+    user_labels = list(filter(lambda l: l["type"] == "user", labels))
+
+    for label in user_labels:
+        sample_messages = (
+            service.users()
+            .messages()
+            .list(userId="me", labelIds=[label["id"]], maxResults=1)
+            .execute()
+        )
+        if "messages" in sample_messages:
+            label["empty"] = ""
+            msg = (
+                service.users()
+                .messages()
+                .get(userId="me", id=sample_messages["messages"][0]["id"])
+                .execute()
+            )
+            label["dt"] = datetime.fromtimestamp(int(msg["internalDate"]) / 1000)
+        else:
+            label["empty"] = "Empty"
+            label["dt"] = ""
+
+    potentially_idle_lables = list(
+        filter(
+            lambda l: l["empty"] or (datetime.now() - l["dt"]).days > 365, user_labels
+        )
+    )
+    if not potentially_idle_lables:
+        return
+
+    print("\033[1;31mPotentially idle labels:\033[0m")
+
+    for label in potentially_idle_lables:
+        if label["empty"] or (datetime.now() - label["dt"]).days > 365:
+            print(
+                f"\033[31m{label['name']:<20} {label['empty']:<20} Latest: {label['dt']}\033[0m"
+            )
+
+
 def main():
     """
     Script driver.
@@ -115,9 +173,12 @@ def main():
 
     labels = get_labels(service)
     print_labels(labels)
+    print("\n")
+    analyze_labels(service, labels)
+    print("\n")
 
-    list_filters(service)
-
+    filters = get_filters(service)
+    print_filters(filters)
     # Example of creating a new filter
     # criteria = {
     #     'from': 'example@example.com',
