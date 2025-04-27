@@ -9,6 +9,8 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 
+import pandas as pd
+
 # If modifying these scopes, delete the file token.pickle.
 SCOPES = ["https://www.googleapis.com/auth/gmail.settings.basic"]
 
@@ -90,14 +92,30 @@ def delete_filter(service, filter_id):
     print(f"Filter {filter_id} deleted successfully.")
 
 
+def get_labels(service):
+    """Get all labels for the authenticated user."""
+    results = service.users().labels().list(userId="me").execute()
+    labels = results.get("labels", [])
+    return labels
+
+
+def print_labels(labels):
+    """Print labels."""
+    print(f"Labels: {len(labels)} found")
+    print("----------------------------------------------------")
+    df = pd.DataFrame(labels)
+    print(df)
+
+
 def main():
     """
     Script driver.
     """
     service = get_gmail_service()
 
-    # Example usage:
-    # List all filters
+    labels = get_labels(service)
+    print_labels(labels)
+
     list_filters(service)
 
     # Example of creating a new filter
