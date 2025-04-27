@@ -1,9 +1,13 @@
-from google.oauth2.credentials import Credentials
+"""
+Script to manipulate Gmail filters.
+"""
+
+import os.path
+import pickle
+
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
-import os.path
-import pickle
 
 # If modifying these scopes, delete the file token.pickle.
 SCOPES = ["https://www.googleapis.com/auth/gmail.settings.basic"]
@@ -36,66 +40,60 @@ def get_gmail_service():
 
 def list_filters(service):
     """List all filters for the authenticated user."""
-    try:
-        results = service.users().settings().filters().list(userId="me").execute()
-        filters = results.get("filter", [])
+    results = service.users().settings().filters().list(userId="me").execute()
+    filters = results.get("filter", [])
 
-        if not filters:
-            print("No filters found.")
-            return
+    if not filters:
+        print("No filters found.")
+        return
 
-        print("Filters:")
-        for filter in filters:
-            print(f"Filter ID: {filter['id']}")
-            if "criteria" in filter:
-                criteria = filter["criteria"]
-                print(f"  From: {criteria.get('from', 'Any')}")
-                print(f"  To: {criteria.get('to', 'Any')}")
-                print(f"  Subject: {criteria.get('subject', 'Any')}")
-                print(f"  Has the words: {criteria.get('hasTheWord', 'None')}")
-                print(f"  Doesn't have: {criteria.get('doesNotHaveTheWord', 'None')}")
-            if "action" in filter:
-                action = filter["action"]
-                print(f"  Actions:")
-                if "addLabelIds" in action:
-                    print(f"    Add labels: {action['addLabelIds']}")
-                if "removeLabelIds" in action:
-                    print(f"    Remove labels: {action['removeLabelIds']}")
-                if "forwardTo" in action:
-                    print(f"    Forward to: {action['forwardTo']}")
-            print("---")
-    except Exception as error:
-        print(f"An error occurred: {error}")
+    print("Filters:")
+    for fltr in filters:
+        print(f"Filter ID: {fltr['id']}")
+        if "criteria" in fltr:
+            criteria = fltr["criteria"]
+            print(f"  From: {criteria.get('from', 'Any')}")
+            print(f"  To: {criteria.get('to', 'Any')}")
+            print(f"  Subject: {criteria.get('subject', 'Any')}")
+            print(f"  Has the words: {criteria.get('hasTheWord', 'None')}")
+            print(f"  Doesn't have: {criteria.get('doesNotHaveTheWord', 'None')}")
+        if "action" in fltr:
+            action = fltr["action"]
+            print("  Actions:")
+            if "addLabelIds" in action:
+                print(f"    Add labels: {action['addLabelIds']}")
+            if "removeLabelIds" in action:
+                print(f"    Remove labels: {action['removeLabelIds']}")
+            if "forwardTo" in action:
+                print(f"    Forward to: {action['forwardTo']}")
+        print("---")
 
 
 def create_filter(service, criteria, actions):
     """Create a new filter with the specified criteria and actions."""
-    try:
-        filter_body = {"criteria": criteria, "action": actions}
-        result = (
-            service.users()
-            .settings()
-            .filters()
-            .create(userId="me", body=filter_body)
-            .execute()
-        )
-        print(f'Filter created: {result["id"]}')
-        return result
-    except Exception as error:
-        print(f"An error occurred: {error}")
-        return None
+
+    filter_body = {"criteria": criteria, "action": actions}
+    result = (
+        service.users()
+        .settings()
+        .filters()
+        .create(userId="me", body=filter_body)
+        .execute()
+    )
+    print(f'Filter created: {result["id"]}')
+    return result
 
 
 def delete_filter(service, filter_id):
     """Delete a filter with the specified ID."""
-    try:
-        service.users().settings().filters().delete(userId="me", id=filter_id).execute()
-        print(f"Filter {filter_id} deleted successfully.")
-    except Exception as error:
-        print(f"An error occurred: {error}")
+    service.users().settings().filters().delete(userId="me", id=filter_id).execute()
+    print(f"Filter {filter_id} deleted successfully.")
 
 
 def main():
+    """
+    Script driver.
+    """
     service = get_gmail_service()
 
     # Example usage:
