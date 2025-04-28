@@ -87,6 +87,27 @@ def list_filters(service):
         print("---")
 
 
+def analyze_filters(filters, labels):
+    """Analyze filters."""
+    # TBD: find repeating high level domains
+    print("Analyzing filters ...")
+    label_ids = {label["id"] for label in labels}
+    for fltr in filters:
+        if "action" in fltr:
+            action = fltr["action"]
+            if "addLabelIds" in action:
+                for lbl in action["addLabelIds"]:
+                    if lbl not in label_ids:
+                        print(f"inactive label {lbl}")
+            if "removeLabelIds" in action:
+                for lbl in action["removeLabelIds"]:
+                    if lbl not in label_ids:
+                        print(f"inactive label {lbl}")
+            if "forwardTo" in action:
+                print(f"    Forward to: {action['forwardTo']}")
+    print("Done analyzing filters.")
+
+
 def create_filter(service, criteria, actions):
     """Create a new filter with the specified criteria and actions."""
 
@@ -125,6 +146,7 @@ def print_labels(labels):
 
 def analyze_labels(service, labels):
     """Analyze labels."""
+    print("Analyzing labels ...")
 
     user_labels = list(filter(lambda l: l["type"] == "user", labels))
 
@@ -163,6 +185,7 @@ def analyze_labels(service, labels):
             print(
                 f"\033[31m{label['name']:<20} {label['empty']:<20} Latest: {label['dt']}\033[0m"
             )
+    print("Done analyzing labels.")
 
 
 def main():
@@ -179,6 +202,8 @@ def main():
 
     filters = get_filters(service)
     print_filters(filters)
+    print("\n")
+    analyze_filters(filters, labels)
     # Example of creating a new filter
     # criteria = {
     #     'from': 'example@example.com',
