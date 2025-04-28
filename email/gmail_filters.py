@@ -2,9 +2,11 @@
 Script to manipulate Gmail filters.
 """
 
+from collections import defaultdict
 import os.path
 import pickle
 from datetime import datetime
+import tldextract
 
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
@@ -87,12 +89,27 @@ def list_filters(service):
         print("---")
 
 
+def print_dd(dd):
+    """Print defaultdict."""
+    pd.set_option("display.max_rows", None)
+    pd.set_option("display.max_colwidth", None)
+    df = pd.DataFrame.from_dict(dd, orient="index")
+    print(df)
+    print(f"Total entries: {len(df)}")
+
+
 def analyze_filters(filters, labels):
     """Analyze filters."""
     # TBD: find repeating high level domains
     print("Analyzing filters ...")
     label_ids = {label["id"] for label in labels}
+    tlds = defaultdict(lambda: {"counter": 0, "criteria": set()})
+
     for fltr in filters:
+        if "criteria" in fltr:
+            tld = tldextract.extract(fltr["criteria"]["from"])
+            tlds[tld.domain]["counter"] += 1
+            tlds[tld.domain]["criteria"].add(fltr["criteria"]["from"])
         if "action" in fltr:
             action = fltr["action"]
             if "addLabelIds" in action:
@@ -105,6 +122,8 @@ def analyze_filters(filters, labels):
                         print(f"inactive label {lbl}")
             if "forwardTo" in action:
                 print(f"    Forward to: {action['forwardTo']}")
+
+    print_dd(tlds)
     print("Done analyzing filters.")
 
 
