@@ -5,7 +5,7 @@ Script to manipulate Gmail filters.
 from collections import defaultdict
 import os.path
 import pickle
-from datetime import datetime
+from datetime import datetime, date
 import tldextract
 
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -51,7 +51,7 @@ def get_filters(service):
 
 
 def print_filters(filters):
-    """Print labels."""
+    """Print filters."""
     df = pd.DataFrame(filters)
     print_df(df)
 
@@ -88,7 +88,7 @@ def list_filters(service):
 
 
 def print_df(df):
-    """Print dataframe."""
+    """Print pandas dataframe."""
     pd.set_option("display.max_rows", None)
     pd.set_option("display.max_colwidth", None)
     print(df)
@@ -101,11 +101,33 @@ def print_dd(dd):
     print_df(df)
 
 
-def analyze_filters(service, filters, labels):
+def markup_tlds(tlds):
+    """Markup tlds that may require attention with *."""
+    for tld in tlds:
+        if tlds[tld]["counter"] > 1:
+            tlds[tld]["counter"] = "\033[31m*{tlds[tld]['counter']}\033[0m"
+        if tlds[tld]["action"] == "N":
+            tlds[tld]["action"] = "\033[31m*N\033[0m"
+        if not tlds[tld]["latest"]:
+            tlds[tld]["latest"] = ["\033[31m*\033[0m"]
+        else:
+            for dt in tlds[tld]["latest"]:
+                if (date.today() - dt).days > 365:
+                    tlds[tld]["latest"] = (
+                        "\033[31m*"
+                        + str([d.strftime("%Y-%m-%d") for d in tlds[tld]["latest"]])
+                        + "\033[0m"
+                    )
+
+    return tlds
+
+
+def analyze_filters(service, filters):
     """Analyze filters."""
     print("Analyzing filters ...")
-    label_ids = {label["id"] for label in labels}
-    tlds = defaultdict(lambda: {"counter": 0, "criteria": set(), "latest": []})
+    tlds = defaultdict(
+        lambda: {"counter": 0, "criteria": set(), "latest": [], "action": "Y"}
+    )
 
     for fltr in filters:
         if "criteria" in fltr:
@@ -129,19 +151,10 @@ def analyze_filters(service, filters, labels):
                 tlds[tld.domain]["latest"].append(
                     datetime.fromtimestamp(int(msg["internalDate"]) / 1000).date()
                 )
-        if "action" in fltr:
-            action = fltr["action"]
-            if "addLabelIds" in action:
-                for lbl in action["addLabelIds"]:
-                    if lbl not in label_ids:
-                        print(f"inactive label {lbl}")
-            if "removeLabelIds" in action:
-                for lbl in action["removeLabelIds"]:
-                    if lbl not in label_ids:
-                        print(f"inactive label {lbl}")
-            if "forwardTo" in action:
-                print(f"    Forward to: {action['forwardTo']}")
+        if not "action" in fltr:
+            tlds[tld.domain]["action"] = "N"
 
+    tlds = markup_tlds(tlds)
     print_dd(tlds)
     print("Done analyzing filters.")
 
@@ -241,7 +254,7 @@ def main():
     filters = get_filters(service)
     print_filters(filters)
     print("\n")
-    analyze_filters(service, filters, labels)
+    analyze_filters(service, filters)
     # Example of creating a new filter
     # criteria = {
     #     'from': 'example@example.com',
