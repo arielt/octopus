@@ -52,10 +52,8 @@ def get_filters(service):
 
 def print_filters(filters):
     """Print labels."""
-    print(f"Filters: {len(filters)} found")
-    print("----------------------------------------------------")
     df = pd.DataFrame(filters)
-    print(df)
+    print_df(df)
 
 
 def list_filters(service):
@@ -89,27 +87,48 @@ def list_filters(service):
         print("---")
 
 
-def print_dd(dd):
-    """Print defaultdict."""
+def print_df(df):
+    """Print dataframe."""
     pd.set_option("display.max_rows", None)
     pd.set_option("display.max_colwidth", None)
-    df = pd.DataFrame.from_dict(dd, orient="index")
     print(df)
     print(f"Total entries: {len(df)}")
 
 
-def analyze_filters(filters, labels):
+def print_dd(dd):
+    """Print defaultdict."""
+    df = pd.DataFrame.from_dict(dd, orient="index")
+    print_df(df)
+
+
+def analyze_filters(service, filters, labels):
     """Analyze filters."""
-    # TBD: find repeating high level domains
     print("Analyzing filters ...")
     label_ids = {label["id"] for label in labels}
-    tlds = defaultdict(lambda: {"counter": 0, "criteria": set()})
+    tlds = defaultdict(lambda: {"counter": 0, "criteria": set(), "latest": []})
 
     for fltr in filters:
         if "criteria" in fltr:
             tld = tldextract.extract(fltr["criteria"]["from"])
             tlds[tld.domain]["counter"] += 1
-            tlds[tld.domain]["criteria"].add(fltr["criteria"]["from"])
+            from_email = fltr["criteria"]["from"]
+            tlds[tld.domain]["criteria"].add(from_email)
+            latest = (
+                service.users()
+                .messages()
+                .list(userId="me", q=f"from:{from_email}", maxResults=1)
+                .execute()
+            )
+            if "messages" in latest:
+                msg = (
+                    service.users()
+                    .messages()
+                    .get(userId="me", id=latest["messages"][0]["id"])
+                    .execute()
+                )
+                tlds[tld.domain]["latest"].append(
+                    datetime.fromtimestamp(int(msg["internalDate"]) / 1000).date()
+                )
         if "action" in fltr:
             action = fltr["action"]
             if "addLabelIds" in action:
@@ -160,7 +179,7 @@ def print_labels(labels):
     print(f"Labels: {len(labels)} found")
     print("----------------------------------------------------")
     df = pd.DataFrame(labels)
-    print(df)
+    print_df(df)
 
 
 def analyze_labels(service, labels):
@@ -222,7 +241,7 @@ def main():
     filters = get_filters(service)
     print_filters(filters)
     print("\n")
-    analyze_filters(filters, labels)
+    analyze_filters(service, filters, labels)
     # Example of creating a new filter
     # criteria = {
     #     'from': 'example@example.com',
