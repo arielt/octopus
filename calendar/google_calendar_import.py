@@ -5,6 +5,7 @@ This script is used to import events from the user's Google Calendar to the data
 from datetime import datetime as dt, timezone as tz
 import os.path
 import pickle
+import pandas as pd
 
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
@@ -55,6 +56,11 @@ def get_calendar_events(service, max_results=10):
         .execute()
     )
     events = events_result.get("items", [])
+    print(events)
+
+    df = pd.DataFrame(events)
+    print(df)
+    df.to_csv("output.csv", index=False)
 
     if not events:
         print("No upcoming events found.")
@@ -67,4 +73,4 @@ def get_calendar_events(service, max_results=10):
 
 if __name__ == "__main__":
     calendar_service = get_calendar_service()
-    get_calendar_events(calendar_service)
+    get_calendar_events(calendar_service, 50)
