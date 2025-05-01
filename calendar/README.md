@@ -13,7 +13,7 @@ pip install -r packages.lst
   - Enable the `Google Calendar API` for your project
   - Create OAuth 2.0 credentials `Desktop application`
   - Download the credentials and save them as credentials.json
-  - Add user in Dashboard → OAuth consent screen → Audience → Test users
+  - Add user in Google Auth Platform → Audience → Test users
 
 ### Execute
 ```shell
