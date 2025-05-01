@@ -1,6 +1,11 @@
 # credentials to ignore everywhere
+credentials
 credentials.json
 token.pickle
+
+# cache
 __pycache__/
+
+# jupyter
 .ipynb_checkpoints
 jupyter/data/
