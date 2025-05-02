@@ -9,3 +9,6 @@ __pycache__/
 # jupyter
 .ipynb_checkpoints
 jupyter/data/
+
+# deployment
+deployments/local/volumes

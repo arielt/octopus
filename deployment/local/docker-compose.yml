@@ -1,0 +1,9 @@
+services:
+  vault:
+    image: hashicorp/vault:latest
+    ports:
+      - "8200:8200"
+    env_file:
+      - .env
+    volumes:
+      - ./volumes:/vault
